@@ -2,6 +2,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
+import { exiftool } from "exiftool-vendored";
 import { parseImageMetadata } from "./metadata.js";
 
 const rootDir = resolve(".");
@@ -62,15 +63,45 @@ async function handleParse(request: IncomingMessage, response: ServerResponse): 
   try {
     await writeFile(tempPath, file.content);
     const metadata = await parseImageMetadata(tempPath);
+    const preview = await extractBrowserPreview(tempPath, tempDir);
     sendJson(response, 200, {
       ...metadata,
       sourcePath: file.filename,
       fileName: file.filename,
+      ...preview,
       raw: sanitizeForJson(metadata.raw),
     });
   } finally {
     await rm(tempDir, { recursive: true, force: true });
   }
+}
+
+async function extractBrowserPreview(sourcePath: string, tempDir: string): Promise<{ previewDataUrl?: string; previewMime?: string }> {
+  const jobs: Array<{ tag: string; fileName: string; run: (dest: string) => Promise<void> }> = [
+    { tag: "PreviewImage", fileName: "preview.jpg", run: (dest) => exiftool.extractPreview(sourcePath, dest) },
+    { tag: "ThumbnailImage", fileName: "thumbnail.jpg", run: (dest) => exiftool.extractThumbnail(sourcePath, dest) },
+    { tag: "JpgFromRaw", fileName: "raw-preview.jpg", run: (dest) => exiftool.extractJpgFromRaw(sourcePath, dest) },
+    { tag: "OtherImage", fileName: "other-preview.jpg", run: (dest) => exiftool.extractBinaryTag("OtherImage", sourcePath, dest) },
+  ];
+
+  for (const job of jobs) {
+    const dest = join(tempDir, job.fileName);
+    try {
+      await job.run(dest);
+      const content = await readFile(dest);
+      if (!content.length) continue;
+
+      const mime = detectImageMime(content) || "image/jpeg";
+      return {
+        previewMime: mime,
+        previewDataUrl: `data:${mime};base64,${content.toString("base64")}`,
+      };
+    } catch {
+      // Try the next embedded preview tag.
+    }
+  }
+
+  return {};
 }
 
 async function serveStatic(request: IncomingMessage, response: ServerResponse): Promise<void> {
@@ -169,6 +200,13 @@ function contentType(filePath: string): string {
     ".jpg": "image/jpeg",
     ".jpeg": "image/jpeg",
   }[extname(filePath).toLowerCase()] || "application/octet-stream";
+}
+
+function detectImageMime(content: Buffer): string | undefined {
+  if (content.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))) return "image/jpeg";
+  if (content.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return "image/png";
+  if (content.subarray(0, 4).toString("ascii") === "RIFF" && content.subarray(8, 12).toString("ascii") === "WEBP") return "image/webp";
+  return undefined;
 }
 
 function sanitizeForJson(value: unknown): unknown {

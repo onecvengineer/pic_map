@@ -109,6 +109,8 @@ function normalizePhoto({ id, url, name, size, type, metadata }) {
     size,
     type,
     parser: metadata.parser || "unknown",
+    displayUrl: canBrowserPreview(name, type) ? url : (metadata.previewDataUrl || placeholderDataUrl(name, metadata)),
+    previewMime: metadata.previewMime || "",
     make: metadata.make || "",
     model: metadata.model || "",
     software: metadata.software || "",
@@ -170,7 +172,7 @@ function renderList(photos) {
   els.list.className = "photo-list";
   els.list.innerHTML = photos.map((photo) => `
     <button class="photo-item ${photo.id === state.selectedId ? "active" : ""}" type="button" data-id="${photo.id}">
-      <img class="thumb" src="${photo.url}" alt="">
+      <img class="thumb" src="${photo.displayUrl}" alt="" data-id="${photo.id}">
       <span>
         <span class="photo-name">${escapeHtml(photo.name)}</span>
         <span class="photo-meta">
@@ -196,7 +198,7 @@ function renderMarkers(photos) {
     const marker = L.marker([photo.latitude, photo.longitude]).addTo(map);
     marker.bindPopup(`
       <div class="popup">
-        <img src="${photo.url}" alt="">
+        <img src="${photo.displayUrl}" alt="">
         <b>${escapeHtml(photo.name)}</b>
         <span>${escapeHtml(cameraLabel(photo) || "未知设备")}</span>
       </div>
@@ -216,11 +218,12 @@ function renderDetail() {
   }
 
   els.detail.innerHTML = `
-    <img src="${photo.url}" alt="">
+    <img src="${photo.displayUrl}" alt="">
     <div>
       <h2>${escapeHtml(photo.name)}</h2>
       <dl>
         <div><dt>解析器</dt><dd>${escapeHtml(photo.parser)}</dd></div>
+        <div><dt>预览</dt><dd>${escapeHtml(photo.previewMime || (canBrowserPreview(photo.name, photo.type) ? "browser" : "占位图"))}</dd></div>
         <div><dt>设备</dt><dd>${escapeHtml(cameraLabel(photo) || "未知")}</dd></div>
         <div><dt>时间</dt><dd>${escapeHtml(photo.dateTime || "无")}</dd></div>
         <div><dt>尺寸</dt><dd>${escapeHtml(photo.imageWidth && photo.imageHeight ? `${photo.imageWidth} x ${photo.imageHeight}` : "无")}</dd></div>
@@ -258,6 +261,36 @@ function hasCoordinates(photo) {
 
 function cameraLabel(photo) {
   return [photo.make, photo.model].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+}
+
+function canBrowserPreview(fileName, mimeType) {
+  const extension = fileName.split(".").pop()?.toLowerCase() || "";
+  const browserMimes = new Set(["image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"]);
+  return browserMimes.has(mimeType) || ["jpg", "jpeg", "png", "gif", "webp", "svg"].includes(extension);
+}
+
+function placeholderDataUrl(fileName, metadata) {
+  const extension = (fileName.split(".").pop() || "IMG").slice(0, 5).toUpperCase();
+  const title = escapeSvg(extension);
+  const subtitle = escapeSvg(metadata.previewDataUrl ? "Preview" : "Metadata only");
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="360" height="240" viewBox="0 0 360 240">
+      <rect width="360" height="240" fill="#f0eadf"/>
+      <path d="M32 42h296v156H32z" fill="#fffaf0" stroke="#d7cebd"/>
+      <text x="180" y="112" text-anchor="middle" font-family="Georgia, serif" font-size="46" fill="#1d211f">${title}</text>
+      <text x="180" y="145" text-anchor="middle" font-family="Avenir Next, Segoe UI, sans-serif" font-size="16" fill="#6f756f">${subtitle}</text>
+    </svg>
+  `.trim();
+
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function escapeSvg(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 function formatExposure(value) {
