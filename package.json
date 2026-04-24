@@ -1,0 +1,17 @@
+{
+  "name": "photo-atlas-parser",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "parse": "node dist/cli.js",
+    "serve": "node dist/server.js"
+  },
+  "dependencies": {
+    "exiftool-vendored": "^35.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0"
+  }
+}

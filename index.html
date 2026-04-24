@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Photo Atlas</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <section class="workspace">
+        <aside class="panel">
+          <div class="brand">
+            <div>
+              <p class="eyebrow">Photo Atlas</p>
+              <h1>照片位置测试台</h1>
+            </div>
+            <span class="status-dot" aria-hidden="true"></span>
+          </div>
+
+          <label class="dropzone" for="photoInput">
+            <input
+              id="photoInput"
+              type="file"
+              accept="image/*,.jpg,.jpeg,.heic,.heif,.cr3,.cr2,.arw,.nef"
+              multiple
+            />
+            <span class="drop-icon">+</span>
+            <span class="drop-title">上传照片</span>
+            <span class="drop-copy">支持多选；后端 exiftool 解析 EXIF/GPS</span>
+          </label>
+
+          <div class="metrics" aria-live="polite">
+            <div>
+              <strong id="totalCount">0</strong>
+              <span>照片</span>
+            </div>
+            <div>
+              <strong id="gpsCount">0</strong>
+              <span>有坐标</span>
+            </div>
+            <div>
+              <strong id="cameraCount">0</strong>
+              <span>设备</span>
+            </div>
+          </div>
+
+          <div class="filters">
+            <input id="searchInput" type="search" placeholder="搜索设备、文件名、日期" />
+            <select id="gpsFilter" aria-label="坐标筛选">
+              <option value="all">全部照片</option>
+              <option value="with">仅有坐标</option>
+              <option value="without">缺少坐标</option>
+            </select>
+          </div>
+
+          <div id="photoList" class="photo-list empty">
+            <div class="empty-state">
+              <b>还没有照片</b>
+              <span>上传 iPhone 原图、Canon JPG/CR3，马上查看元数据。</span>
+            </div>
+          </div>
+        </aside>
+
+        <section class="map-stage">
+          <div id="map"></div>
+          <div class="map-overlay">
+            <div>
+              <p class="eyebrow">GPS Map</p>
+              <strong id="mapTitle">等待照片</strong>
+            </div>
+            <button id="fitButton" type="button">定位全部</button>
+          </div>
+          <div id="detail" class="detail">
+            <span>选择一张照片查看详情</span>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script
+      src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
+      crossorigin=""
+    ></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
