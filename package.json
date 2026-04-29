@@ -9,7 +9,8 @@
     "serve": "node dist/server.js"
   },
   "dependencies": {
-    "exiftool-vendored": "^35.18.0"
+    "exiftool-vendored": "^35.18.0",
+    "heic-convert": "^2.1.0"
   },
   "devDependencies": {
     "@types/node": "^25.6.0"

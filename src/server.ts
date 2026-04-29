@@ -3,6 +3,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { extname, join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { exiftool } from "exiftool-vendored";
+import convertHeic from "heic-convert";
 import { parseImageMetadata } from "./metadata.js";
 
 const rootDir = resolve(".");
@@ -77,6 +78,31 @@ async function handleParse(request: IncomingMessage, response: ServerResponse): 
 }
 
 async function extractBrowserPreview(sourcePath: string, tempDir: string): Promise<{ previewDataUrl?: string; previewMime?: string }> {
+  const extension = extname(sourcePath).toLowerCase();
+  if (extension === ".heic" || extension === ".heif") {
+    try {
+      const input = await readFile(sourcePath);
+      const output = await convertHeic({
+        buffer: input,
+        format: "JPEG",
+        quality: 0.82,
+      });
+      const content = Buffer.isBuffer(output)
+        ? output
+        : output instanceof ArrayBuffer
+          ? Buffer.from(new Uint8Array(output))
+          : Buffer.from(output);
+      if (content.length) {
+        return {
+          previewMime: "image/jpeg",
+          previewDataUrl: `data:image/jpeg;base64,${content.toString("base64")}`,
+        };
+      }
+    } catch {
+      // Fall through to embedded preview extraction below.
+    }
+  }
+
   const jobs: Array<{ tag: string; fileName: string; run: (dest: string) => Promise<void> }> = [
     { tag: "PreviewImage", fileName: "preview.jpg", run: (dest) => exiftool.extractPreview(sourcePath, dest) },
     { tag: "ThumbnailImage", fileName: "thumbnail.jpg", run: (dest) => exiftool.extractThumbnail(sourcePath, dest) },
