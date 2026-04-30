@@ -4,7 +4,7 @@ import { basename, extname, resolve } from "node:path";
 import { promisify } from "node:util";
 import { exiftool } from "exiftool-vendored";
 import { parseJpegExif } from "./jpeg-exif.js";
-import type { PhotoMetadata } from "./types.js";
+import type { PhotoMetadata } from "@pic-map/shared";
 
 const execFileAsync = promisify(execFile);
 let exiftoolAvailable: boolean | undefined;
@@ -193,6 +193,7 @@ function guessMime(filePath: string): string {
     ".png": "image/png",
     ".tif": "image/tiff",
     ".tiff": "image/tiff",
+    ".gif": "image/gif",
     ".cr2": "image/x-canon-cr2",
     ".cr3": "image/x-canon-cr3",
   };

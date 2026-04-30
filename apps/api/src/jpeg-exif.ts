@@ -1,4 +1,4 @@
-import type { GpsMetadata, PhotoMetadata } from "./types.js";
+import type { GpsMetadata, PhotoMetadata } from "@pic-map/shared";
 
 interface ParsedIfd {
   [key: string]: unknown;

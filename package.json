@@ -1,18 +1,23 @@
 {
-  "name": "photo-atlas-parser",
+  "name": "pic-map",
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "parse": "node dist/cli.js",
-    "serve": "node dist/server.js"
-  },
-  "dependencies": {
-    "exiftool-vendored": "^35.18.0",
-    "heic-convert": "^2.1.0"
+    "dev": "npm run dev -w @pic-map/api",
+    "dev:web": "npm run dev -w @pic-map/web",
+    "build": "npm run build -w @pic-map/shared && npm run build -w @pic-map/web && npm run build -w @pic-map/api",
+    "typecheck": "npm run typecheck -w @pic-map/web && npm run typecheck -w @pic-map/api",
+    "parse": "npm run parse -w @pic-map/api",
+    "serve": "npm run serve -w @pic-map/api",
+    "start": "npm run serve"
   },
   "devDependencies": {
-    "@types/node": "^25.6.0"
+    "@types/node": "^25.6.0",
+    "typescript": "^5.9.2"
   }
 }

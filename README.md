@@ -1,40 +1,67 @@
-# Photo Atlas Parser
+# Pic Map
 
-本阶段只做图片解析，不接数据库。
+私有照片地图 + 旅行时间轴。v1 是本地开发、可 Docker 部署的 Web 应用：网页批量上传照片，服务端保存原图和预览，解析 EXIF/GPS，按地图和日期时间轴浏览。
 
-## 使用
+代码已改成前后分离结构：`apps/web` 是 Vite/React 前端，`apps/api` 是 Fastify API，`packages/shared` 放共享类型。生产环境仍由 API 服务托管前端构建产物，部署入口保持一个端口。
+
+根目录 `public/` 作为前端公共静态资源目录使用；用于设计参考、候选视觉图或不需要经过模块导入的资源，构建时会复制到 `apps/web/dist/`。
+
+## 本地启动
 
 ```bash
+npm install
+npm run build
+APP_PASSWORD=change-me SESSION_SECRET=change-me npm run serve
+```
+
+打开 `http://127.0.0.1:5173`。未设置 `APP_PASSWORD` 时开发默认密码是 `picmap`。
+
+## 环境变量
+
+- `PORT`：HTTP 端口，默认 `5173`。
+- `HOST`：HTTP 监听地址，本地默认 `127.0.0.1`，Docker 使用 `0.0.0.0`。
+- `DATA_DIR`：图库数据目录，默认 `./data`。
+- `APP_PASSWORD`：单用户登录密码，生产必须设置。
+- `SESSION_SECRET`：登录 cookie 签名密钥，生产必须设置。
+- `AMAP_KEY`：高德地点搜索 Key；未设置时地点搜索 API 返回配置错误。
+- `INFERENCE_WINDOW_MINUTES`：无 GPS 照片自动推断时间窗口，默认 `30`。
+
+## 数据目录
+
+所有可搬家的数据都放在同一个 `data/` 下：
+
+```text
+data/
+  originals/   # 原图，按 sha256 前缀分目录
+  previews/    # 浏览器可显示预览
+  db/          # 当前 v1 文件索引 photos.json
+  exports/     # 迁移 manifest 和数据库快照
+```
+
+## 常用命令
+
+```bash
+npm run dev          # 启动 API；前端开发可另开终端跑 npm run dev:web
+npm run dev:web      # Vite dev server，代理 /api 和 /media 到 5173
 npm run build
 npm run parse -- /path/to/photo.jpg
-```
-
-网页验证：
-
-```bash
-npm run build
 npm run serve
+docker compose up --build
 ```
 
-然后打开 `http://127.0.0.1:5173` 上传图片。网页不会写数据库；上传文件只会保存到临时目录用于解析，解析完成后删除。
-
-也可以一次解析多张：
+## Docker 部署
 
 ```bash
-npm run parse -- ./a.jpg ./b.heic ./c.cr3
+cp .env.example .env
+docker compose up --build -d
 ```
 
-## 当前能力
+`docker-compose.yml` 挂载 `./data:/app/data`，迁移服务器时复制整个 `data/` 目录即可保留原图、预览、索引和导出 manifest。
 
-- 优先调用本机 `exiftool`，可覆盖 HEIC、RAW、CR3 等更多格式。
-- 如果没有 `exiftool`，自动降级为内置 JPEG EXIF 解析。
-- 输出标准化 JSON 字段：
-  - 文件：路径、文件名、大小、修改时间、MIME 猜测
-  - 图片：宽高、方向
-  - 设备：厂商、型号、软件、机身序列号
-  - 镜头：镜头型号、镜头序列号
-  - 时间：拍摄时间、创建时间、修改时间、时区偏移、亚秒
-  - 参数：焦距、光圈、快门、ISO
-  - 位置：纬度、经度、海拔、GPS 时间
+## 文档
 
-当前项目已安装 `exiftool-vendored`，不依赖系统级 `exiftool`。如果 vendored 解析异常，JPEG 会继续使用内置 EXIF 解析兜底。
+- [产品说明](docs/product.md)
+- [架构说明](docs/architecture.md)
+- [API 文档](docs/api.md)
+- [数据结构](docs/schema.md)
+- [运维手册](docs/operations.md)
