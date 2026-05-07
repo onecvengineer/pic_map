@@ -28,12 +28,19 @@
 
 ```bash
 npm install
-npm run dev
+npm run dev:all
 ```
 
-另开终端启动前端开发服务器：
+`npm run dev:all` 会同时启动 API 和 Vite 前端。默认开发密码为 `picmap`，也可以在命令前覆盖：
 
 ```bash
+APP_PASSWORD=change-me SESSION_SECRET=change-me npm run dev:all
+```
+
+如需拆开启动，分别运行：
+
+```bash
+npm run dev:api
 npm run dev:web
 ```
 

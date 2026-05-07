@@ -8,8 +8,10 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm run dev -w @pic-map/api",
+    "dev": "npm run dev:api",
+    "dev:api": "npm run dev -w @pic-map/api",
     "dev:web": "npm run dev -w @pic-map/web",
+    "dev:all": "node scripts/dev-all.mjs",
     "build": "npm run build -w @pic-map/shared && npm run build -w @pic-map/web && npm run build -w @pic-map/api",
     "typecheck": "npm run typecheck -w @pic-map/web && npm run typecheck -w @pic-map/api",
     "parse": "npm run parse -w @pic-map/api",

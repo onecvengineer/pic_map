@@ -41,7 +41,9 @@ data/
 ## 常用命令
 
 ```bash
-npm run dev          # 启动 API；前端开发可另开终端跑 npm run dev:web
+npm run dev:all      # 一键启动 API 和 Vite 前端
+npm run dev          # 只启动 API；等同 npm run dev:api
+npm run dev:api      # 只启动 API
 npm run dev:web      # Vite dev server，代理 /api 和 /media 到 5173
 npm run build
 npm run parse -- /path/to/photo.jpg
